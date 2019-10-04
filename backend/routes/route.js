@@ -126,21 +126,19 @@ router.post('/AddDistricts', verify, (req, res) => {
             districtName: req.body.districtName
         });
 
-        console.log(response);
-
         //create new state
         newDistrict.save((err, response) => {
             if (err) {
                 res.json({
                     msg: 'You are getting error please check',
                     error: err,
-                    status:false
+                    status: false
                 })
             } else {
                 res.json({
                     msg: "District added successfully for the state: " + req.body.stateName,
                     data: response,
-                    status:false
+                    status: false
                 })
             }
         });
@@ -166,6 +164,7 @@ router.get('/getCountries', verify, (req, res) => {
 //get state details
 
 router.post('/getStates', verify, (req, res) => {
+
     countryName = req.body.countryName.toUpperCase();
 
     countryModel.findOne({ countryName: countryName }, (err, data) => { //Find the country Id
@@ -190,6 +189,110 @@ router.post('/getStates', verify, (req, res) => {
                 }
             });
         }
+    });
+});
+
+// get country details
+router.get('/getAllCountries', (req, res) => {
+    countryModel.find((err, doc) => {
+        res.json({
+            data: doc
+        })
+    });
+});
+
+//get State Details
+router.get('/getAllStates', (req, res) => {
+    stateModel.find((err, response) => {
+        res.json({
+            data: response
+        });
+    });
+});
+
+//get single District value
+router.post('/getSingleDistrict', (req, res) => {
+    districtModel.find({ _id: req.body.districtId }, (err, response) => {
+        res.json({
+            data: response
+        });
+    })
+});
+
+//get All Districts
+router.get('/getDistricts', (req, res) => {
+    districtModel.find((err, response) => {
+        res.json({
+            data: response
+        })
+    });
+});
+
+//Fetch Single country and single state according to district selected from frontend
+router.post('/getSingleStateAndCountry', (req, res) => {
+    let SingleStateAndCountry = [];
+    districtModel.find({ districtName: req.body.districtName }, (err, response) => {
+        stateModel.find({ _id: response[0].stateId }, (err, response) => {
+            SingleStateAndCountry.push({ 'state': response[0].stateName });
+            countryModel.find({ _id: response[0].countryId }, (err, doc) => {
+                SingleStateAndCountry.push({ 'country': doc[0].countryName });
+                res.json(SingleStateAndCountry);
+            });
+        });
+    });
+});
+
+//Edit All At Once
+router.post('/EditAllAtOnce', (req, res) => {
+
+    let id = req.body.id;
+    let countryName = req.body.countryName;
+    let stateName = req.body.stateName;
+    let districtName = req.body.districtName;
+
+    //Fetch state id and change it to district state id       
+    stateModel.find({ stateName: stateName }, (err, response) => {
+        districtModel.findOneAndUpdate({ _id: id }, { stateId: response[0]._id, districtName: districtName }, (err, doc) => {
+        });
+    });
+
+    countryModel.find({ countryName: countryName }, (err, doc) => {
+        stateModel.findOneAndUpdate({ stateName: stateName }, { countryId: doc[0]._id }, (err, doc) => {
+            res.json({
+                msg: "Data Updated"
+            });
+        });
+    });
+});
+
+router.get('/bigCount', (req, res) => {
+    countryModel.count( (err, countryCount) =>{
+        stateModel.count( (err, stateCount) => {
+            districtModel.count( (err, districtCount) => {
+                count = Math.max(countryCount, stateCount, districtCount);
+                res.json({
+                    'maxCount' : count
+                });
+            });
+        });
+    });
+});
+
+router.post("/getAllInformation", (req, res) => {
+    let countryInfo = [];
+    districtModel.find( {_id: req.body.districtId}, (err, districts) => {
+        stateModel.find({ _id: districts[0].stateId}, (err, states) => {
+            countryModel.find({_id: states[0].countryId}, (err, countries) => {
+                countryInfo.push({
+                    DistrictName: districts[0].districtName,
+                    StateName: states[0].stateName,
+                    CountryName: countries[0].countryName
+                });
+                res.json({
+                    data: countryInfo
+                });
+            });
+        });
     });
 });
 

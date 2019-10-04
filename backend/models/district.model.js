@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const DistrictSchema = mongoose.Schema({
     stateId:{
         type: String,
+        ref:'states',
         requied: true
     },
     districtName:{
